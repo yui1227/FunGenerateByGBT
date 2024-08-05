@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.10.0/p5.min.js"></script>
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let emojis = [];
+        let emojiSize = 32; // 設定 emoji 的尺寸
+        let types = ['✂️', '🪨', '📄'];
+        let typeColors = { '✂️': '#ff6666', '🪨': '#66b2ff', '📄': '#99ff99' };
+        let typeCount={'✂️':0, '🪨':0, '📄':0};
+        let i = 0;
+        function mouseClicked(event) {
+            for (let emoji of emojis) {
+                if (mouseX >= emoji.x && mouseY >= emoji.y && mouseX <= emoji.x + emojiSize && mouseY <= emoji.y + emojiSize) {
+                    emoji.type = types[(types.findIndex(ele=>ele === emoji.type)+1)%3];
+                }
+            }
+        }
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            for (let i = 0; i < 50; i++) {
+                for (let type of types) {
+                    let x = random(emojiSize, width - emojiSize);
+                    let y = random(emojiSize, height - emojiSize);
+                    let emoji = new Emoji(x, y, type);
+                    emojis.push(emoji);
+                }
+            }
+        }
+
+        function draw() {
+            background(255);
+            for (let emoji of emojis) {
+                emoji.move();
+                emoji.checkCollision(emojis);
+                emoji.display();
+            }
+            for(let type of types) {
+                typeCount[type]=emojis.filter(e=>e.type===type).length;
+            }
+            let status = `✂️ ${typeCount['✂️']} 🪨 ${typeCount['🪨']} 📄 ${typeCount['📄']}`;
+            textAlign(LEFT, TOP);
+            fill(0)
+            text(status,0,0);
+        }
+
+        class Emoji {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.vx = random(-5, 5);
+                this.vy = random(-5, 5);
+            }
+
+            move() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 邊界檢查
+                if (this.x < 0 || this.x > width - emojiSize) this.vx *= -1;
+                if (this.y < 0 || this.y > height - emojiSize) this.vy *= -1;
+            }
+
+            checkCollision(others) {
+                for (let other of others) {
+                    if (other !== this && this.isCollidingWith(other)) {
+                        this.handleCollision(other);
+                    }
+                }
+            }
+
+            isCollidingWith(other) {
+                let d = dist(this.x, this.y, other.x, other.y);
+                return d < emojiSize;
+            }
+
+            handleCollision(other) {
+                if (this.type !== other.type) {
+                    // 不同則比較，輸者變成贏者的類型，並且反彈
+                    if (
+                        (this.type === '✂️' && other.type === '📄') ||
+                        (this.type === '🪨' && other.type === '✂️') ||
+                        (this.type === '📄' && other.type === '🪨')
+                    ) {
+                        other.type = this.type;
+                        this.vx *= -1;
+                        this.vy *= -1;
+                        other.vx *= -1;
+                        other.vy *= -1;
+                    } else {
+                        this.type = other.type;
+                        this.vx *= -1;
+                        this.vy *= -1;
+                        other.vx *= -1;
+                        other.vy *= -1;
+                    }
+                }
+                // 如果圖案相同，什麼都不做，直接穿過
+            }
+
+            display() {
+                textSize(emojiSize);
+                textAlign(CENTER, CENTER);
+                fill(typeColors[this.type]);
+                text(this.type, this.x + emojiSize / 2, this.y + emojiSize / 2);
+            }
+        }
+    </script>
+</body>
+
+</html>
